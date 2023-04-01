@@ -1,0 +1,52 @@
+version: "3.3.1"
+services:
+  # CouchDB service configuration
+  couchdb:
+    image: couchdb
+    container_name: couchdb
+    ports:
+      - "5984:5984" # Expose the default CouchDB port
+    volumes:
+      - data:/opt/couchdb/data
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=password
+
+  # CouchDB Fauxton service configuration
+  couchdb-fauxton:
+    image: klaemo/couchdb:2.0.0
+    container_name: couchdb-fauxton
+    restart: always
+    ports:
+      - 5986:5986
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=password
+    command: > # Custom command to configure CouchDB and start it
+      /bin/bash -c "
+        echo '[couch_httpd_auth]'; 
+        echo 'public_fields = appdotnet, avatar, description, email, freenode, name, nickname, twitter, type, url'; 
+        echo 'users_db_public = true'; 
+        echo 'allow_persistent_cookies = true'; 
+        echo '[httpd]'; 
+        echo 'enable_cors = true'; 
+        echo 'bind_address = 0.0.0.0'; 
+        echo '[chttpd]'; 
+        echo 'port = 5986'; 
+        echo 'bind_address = 0.0.0.0'; 
+        echo '[cors]'; 
+        echo 'origins = *'; 
+        echo 'credentials = true'; 
+        echo 'headers = accept, authorization, content-type, origin, referer'; 
+        echo 'methods = GET, PUT, POST, HEAD, DELETE'; 
+        echo '[admins]'; 
+        echo 'admin = -pbkdf2-password,10,8a8ae1e8f917e55f'; 
+        exec /usr/local/bin/couchdb"
+volumes:
+  # Define the named volume for CouchDB data persistence
+  data: {}
+
+networks:
+  # Define the default network
+  default:
+    name: couchdb_network
